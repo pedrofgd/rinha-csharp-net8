@@ -154,6 +154,7 @@ static bool DataValida(string? nascimento, out DateTime dataNascimento) =>
         CultureInfo.InvariantCulture, DateTimeStyles.None,
         out dataNascimento);
 
+// ReSharper disable once ClassNeverInstantiated.Global
 public partial class Program
 {
 }

@@ -10,6 +10,7 @@ namespace IntegrationTests;
 public class ObterPessoasPorTermoTests : IClassFixture<TestWebApplicationFactory<Program>>
 {
     private const string Suffix = "/pessoas";
+    private static readonly string[] StackItems = { "C#", "Npgsql" };
     
     private readonly HttpClient _httpClient;
 
@@ -60,8 +61,8 @@ public class ObterPessoasPorTermoTests : IClassFixture<TestWebApplicationFactory
     [InlineData("Npg")]
     public async Task ObterPessoasPorTermoStackSucesso(string termo)
     {
-        await _httpClient.PostAsJsonAsync(Suffix, new PessoaDto { Nome = "Pedro", Apelido = "ap1", Nascimento = "2001-12-15", Stack = new[] { "C#", "Npgsql" } });
-        await _httpClient.PostAsJsonAsync(Suffix, new PessoaDto { Nome = "Pedro", Apelido = "ap2", Nascimento = "2001-12-15", Stack = new[] { "C#", "Npgsql" } });
+        await _httpClient.PostAsJsonAsync(Suffix, new PessoaDto { Nome = "Pedro", Apelido = "ap1", Nascimento = "2001-12-15", Stack = StackItems });
+        await _httpClient.PostAsJsonAsync(Suffix, new PessoaDto { Nome = "Pedro", Apelido = "ap2", Nascimento = "2001-12-15", Stack = StackItems });
         await _httpClient.PostAsJsonAsync(Suffix, new PessoaDto { Nome = "Pedro", Apelido = "ap3", Nascimento = "2001-12-15", Stack = null});
 
         var sut = await _httpClient.GetAsync($"{Suffix}?t={termo}");
@@ -75,6 +76,11 @@ public class ObterPessoasPorTermoTests : IClassFixture<TestWebApplicationFactory
     [Fact]
     public async Task ObterPessoasPorTermoRetornaVazioSeNaoEncontrado()
     {
+        var sut = await _httpClient.GetAsync($"{Suffix}?t=AAA");
         
+        Assert.Equal(HttpStatusCode.OK, sut.StatusCode);
+        var pessoas = JsonConvert.DeserializeObject<ICollection<PessoaDto>>(await sut.Content.ReadAsStringAsync());
+        Assert.NotNull(pessoas);
+        Assert.Empty(pessoas);
     }
 }

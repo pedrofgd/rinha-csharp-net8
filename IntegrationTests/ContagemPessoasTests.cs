@@ -9,8 +9,9 @@ namespace IntegrationTests;
 public class ContagemPessoasTests : IClassFixture<TestWebApplicationFactory<Program>>
 {
     private const string Suffix = "/contagem-pessoas";
+    private static readonly string[] StackItems = { "C#", "Npgsql" };
 
-    private HttpClient _httpClient;
+    private readonly HttpClient _httpClient;
 
     public ContagemPessoasTests(TestWebApplicationFactory<Program> fixture)
     {
@@ -31,7 +32,7 @@ public class ContagemPessoasTests : IClassFixture<TestWebApplicationFactory<Prog
                     Nome = "Pedro",
                     Apelido = $"ap{i}",
                     Nascimento = "2001-12-15",
-                    Stack = new[] { "C#", "Npgsql" }
+                    Stack = StackItems
                 });
         }
 

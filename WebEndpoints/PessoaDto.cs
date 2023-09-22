@@ -2,9 +2,9 @@ namespace WebEndpoints;
 
 public record PessoaDto
 {
-    public Guid Id { get; set; }
-    public string? Nome { get; set; }
-    public string? Apelido { get; set; }
-    public string? Nascimento { get; set; }
-    public IEnumerable<string>? Stack { get; set; }
+    public Guid Id { get; init; }
+    public string? Nome { get; init; }
+    public string? Apelido { get; init; }
+    public string? Nascimento { get; init; }
+    public IEnumerable<string>? Stack { get; init; }
 }
