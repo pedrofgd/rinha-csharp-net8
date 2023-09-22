@@ -1,6 +1,6 @@
 using Npgsql;
 
-namespace csharp_net8;
+namespace WebEndpoints;
 
 public static class ConnectionFactory
 {

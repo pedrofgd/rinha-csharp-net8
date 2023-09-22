@@ -1,4 +1,4 @@
-namespace csharp_net8;
+namespace WebEndpoints;
 
 public record PessoaDto
 {

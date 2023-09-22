@@ -1,6 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csharp-net8", "csharp-net8.csproj", "{4DAE78B3-0FE8-4C83-8586-5AAC0E9C6C1A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebEndpoints", "WebEndpoints\WebEndpoints.csproj", "{4DAE78B3-0FE8-4C83-8586-5AAC0E9C6C1A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{91D6A669-414B-40DF-8FD2-7A741045E6DA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{63B2B04F-4DDB-4F2A-ABBB-488CF806E36F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationTests", "IntegrationTests\IntegrationTests.csproj", "{899CCAA1-2071-43C7-AC2B-B3FC6D422780}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +18,13 @@ Global
 		{4DAE78B3-0FE8-4C83-8586-5AAC0E9C6C1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DAE78B3-0FE8-4C83-8586-5AAC0E9C6C1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4DAE78B3-0FE8-4C83-8586-5AAC0E9C6C1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{899CCAA1-2071-43C7-AC2B-B3FC6D422780}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{899CCAA1-2071-43C7-AC2B-B3FC6D422780}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{899CCAA1-2071-43C7-AC2B-B3FC6D422780}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{899CCAA1-2071-43C7-AC2B-B3FC6D422780}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4DAE78B3-0FE8-4C83-8586-5AAC0E9C6C1A} = {91D6A669-414B-40DF-8FD2-7A741045E6DA}
+		{899CCAA1-2071-43C7-AC2B-B3FC6D422780} = {63B2B04F-4DDB-4F2A-ABBB-488CF806E36F}
 	EndGlobalSection
 EndGlobal

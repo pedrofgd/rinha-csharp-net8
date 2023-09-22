@@ -1,7 +1,7 @@
 using System.Globalization;
-using csharp_net8;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
+using WebEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -43,7 +43,7 @@ static async Task<IResult> CriarPessoa([FromBody] PessoaDto pessoa, HttpContext 
     command.Parameters.AddWithValue("nome", pessoa.Nome);
     command.Parameters.AddWithValue("apelido", pessoa.Apelido);
     command.Parameters.AddWithValue("dataNascimento", dataNascimento);
-    
+
     if (stack is null) command.Parameters.AddWithValue("stack", DBNull.Value);
     else command.Parameters.AddWithValue("stack", stack);
 
@@ -68,7 +68,7 @@ static async Task<IResult> BuscarPessoaPorId(Guid id)
         FROM pessoas
         WHERE id = @id;
         ";
-    
+
     await using var connection = await ConnectionFactory.GetPostgresConnection();
     await using var command = new NpgsqlCommand(query, connection);
     command.Parameters.AddWithValue("id", id);
@@ -118,7 +118,7 @@ static async Task<IResult> BuscarPessoasPorTermo(string t)
         var apelido = reader.GetString(2);
         var nascimento = reader.GetDateTime(3);
         var stack = await reader.IsDBNullAsync(4) ? null : reader.GetString(4);
-        
+
         pessoas.Add(new PessoaDto
         {
             Id = id,
@@ -153,3 +153,7 @@ static bool DataValida(string? nascimento, out DateTime dataNascimento) =>
     DateTime.TryParseExact(nascimento, "yyyy-MM-dd",
         CultureInfo.InvariantCulture, DateTimeStyles.None,
         out dataNascimento);
+
+public partial class Program
+{
+}
