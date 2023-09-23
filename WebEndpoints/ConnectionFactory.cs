@@ -4,17 +4,30 @@ namespace WebEndpoints;
 
 public static class ConnectionFactory
 {
-    private static string? _postgresConnectionString;
+    private static NpgsqlDataSource _dataSource = null!;
 
     public static void InitPostgres(string? connectionString)
     {
-        _postgresConnectionString = connectionString;
-        ArgumentException.ThrowIfNullOrWhiteSpace(_postgresConnectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        _dataSource = NpgsqlDataSource.Create(connectionString);
+        ArgumentNullException.ThrowIfNull(_dataSource);
     }
     
-    public static async Task<NpgsqlConnection> GetPostgresConnection()
+    public static async Task<NpgsqlConnection?> GetPostgresConnection()
     {
-        var dataSource = NpgsqlDataSource.Create(_postgresConnectionString!);
-        return await dataSource.OpenConnectionAsync();
+        NpgsqlConnection? connection = null;
+        while (connection is null)
+        {
+            try
+            {
+                connection = await _dataSource.OpenConnectionAsync();
+            }
+            catch (Exception)
+            {
+                await Task.Delay(1000);
+            }
+        }
+        
+        return connection;
     }
 }
