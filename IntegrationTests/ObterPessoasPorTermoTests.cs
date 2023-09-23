@@ -83,4 +83,14 @@ public class ObterPessoasPorTermoTests : IClassFixture<TestWebApplicationFactory
         Assert.NotNull(pessoas);
         Assert.Empty(pessoas);
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("?t=")]
+    public async Task ObterPessoaPorTermoFalhaSeBuscaNaoInformada(string busca)
+    {
+        var sut = await _httpClient.GetAsync($"{Suffix}/{busca}");
+        
+        Assert.Equal(HttpStatusCode.BadRequest, sut.StatusCode);
+    }
 }

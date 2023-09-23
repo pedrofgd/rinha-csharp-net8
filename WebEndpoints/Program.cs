@@ -95,8 +95,10 @@ static async Task<IResult> BuscarPessoaPorId(Guid id)
     return Results.NotFound();
 }
 
-static async Task<IResult> BuscarPessoasPorTermo(string t)
+static async Task<IResult> BuscarPessoasPorTermo([FromQuery] string? t)
 {
+    if (string.IsNullOrWhiteSpace(t)) return Results.BadRequest();
+    
     var query = $"%{t}%";
     const string search = @"
         SELECT id, nome, apelido, nascimento, stack
