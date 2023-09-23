@@ -17,7 +17,7 @@ public class CriarPessoaTests : IClassFixture<TestWebApplicationFactory<Program>
     {
         _httpClient = factory.CreateClient();
 
-        TestDatabaseContext.ClearDatabase().Wait();
+        TestDatabaseContext.ClearDatabase(factory).Wait();
     }
 
     public static IEnumerable<object[]> DadosValidos()
@@ -130,5 +130,13 @@ public class CriarPessoaTests : IClassFixture<TestWebApplicationFactory<Program>
         var sut = await _httpClient.PostAsJsonAsync(Suffix, dto);
         
         Assert.Equal(HttpStatusCode.UnprocessableEntity, sut.StatusCode);
+    }
+
+    [Fact]
+    public async Task CriarPessoaFalhaSePayloadNaoInformado()
+    {
+        var sut = await _httpClient.PostAsync(Suffix, null);
+        
+        Assert.Equal(HttpStatusCode.BadRequest, sut.StatusCode);
     }
 }

@@ -1,15 +1,20 @@
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
-using WebEndpoints;
 
 namespace IntegrationTests.Helpers;
 
 public static class TestDatabaseContext
 {
-    public static async Task ClearDatabase()
+    public static async Task ClearDatabase(TestWebApplicationFactory<Program> factory)
     {
-        const string truncate = "TRUNCATE TABLE pessoas cascade;";
-        await using var connection = await ConnectionFactory.GetPostgresConnection();
-        await using var command = new NpgsqlCommand(truncate, connection);
+        var connection = factory.Services.GetRequiredService<NpgsqlConnection>();
+        
+        await connection.OpenAsync();
+        
+        await using var command = new NpgsqlCommand("TRUNCATE TABLE pessoas CASCADE;", connection);
         await command.ExecuteNonQueryAsync();
+
+        await connection.CloseAsync();
+        await connection.DisposeAsync();
     }
 }

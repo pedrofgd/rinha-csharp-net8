@@ -13,11 +13,11 @@ public class ContagemPessoasTests : IClassFixture<TestWebApplicationFactory<Prog
 
     private readonly HttpClient _httpClient;
 
-    public ContagemPessoasTests(TestWebApplicationFactory<Program> fixture)
+    public ContagemPessoasTests(TestWebApplicationFactory<Program> factory)
     {
-        _httpClient = fixture.CreateClient();
+        _httpClient = factory.CreateClient();
 
-        TestDatabaseContext.ClearDatabase().Wait();
+        TestDatabaseContext.ClearDatabase(factory).Wait();
     }
 
     [Fact]

@@ -17,7 +17,7 @@ public class ObterPessoaPorIdTests : IClassFixture<TestWebApplicationFactory<Pro
     {
         _httpClient = factory.CreateClient();
         
-        TestDatabaseContext.ClearDatabase().Wait();
+        TestDatabaseContext.ClearDatabase(factory).Wait();
     }
 
     [Fact]

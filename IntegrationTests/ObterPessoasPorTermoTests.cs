@@ -14,19 +14,19 @@ public class ObterPessoasPorTermoTests : IClassFixture<TestWebApplicationFactory
     
     private readonly HttpClient _httpClient;
 
-    public ObterPessoasPorTermoTests(TestWebApplicationFactory<Program> fixture)
+    public ObterPessoasPorTermoTests(TestWebApplicationFactory<Program> factory)
     {
-        _httpClient = fixture.CreateClient();
+        _httpClient = factory.CreateClient();
 
-        TestDatabaseContext.ClearDatabase().Wait();
+        TestDatabaseContext.ClearDatabase(factory).Wait();
     }
 
     [Theory]
-    [InlineData("P")]
-    [InlineData("edro")]
+    [InlineData("D")]
+    [InlineData("aniel")]
     public async Task ObterPessoasPorTermoNomeSucesso(string termo)
     {
-        const string nome = "Pedro";
+        const string nome = "Daniel";
         await _httpClient.PostAsJsonAsync(Suffix, new PessoaDto { Nome = nome, Apelido = "ap1", Nascimento = "2001-12-15", Stack = null });
         await _httpClient.PostAsJsonAsync(Suffix, new PessoaDto { Nome = nome, Apelido = "ap2", Nascimento = "2001-12-15", Stack = null });
         await _httpClient.PostAsJsonAsync(Suffix, new PessoaDto { Nome = "AAA", Apelido = "ap3", Nascimento = "2001-12-15", Stack = null });

@@ -6,7 +6,10 @@ using WebEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-ConnectionFactory.InitPostgres(configuration.GetConnectionString("PostgreSQL"));
+// PostgreSQL config
+var pgConnString = configuration.GetConnectionString("PostgreSQL");
+ArgumentException.ThrowIfNullOrWhiteSpace(pgConnString);
+builder.Services.AddNpgsqlDataSource(pgConnString);
 
 var app = builder.Build();
 
@@ -19,8 +22,9 @@ app.MapGet("/contagem-pessoas", ContarPessoas);
 
 app.Run();
 
-static async Task<IResult> CriarPessoa([FromBody] PessoaDto pessoa, HttpContext context)
+async Task<IResult> CriarPessoa([FromBody] PessoaDto? pessoa, HttpContext context, NpgsqlConnection connection)
 {
+    if (pessoa is null) return Results.BadRequest();
     if (string.IsNullOrWhiteSpace(pessoa.Nome) || pessoa.Nome.Length > 100 ||
         string.IsNullOrWhiteSpace(pessoa.Apelido) || pessoa.Apelido.Length > 32 ||
         !DataValida(pessoa.Nascimento, out var dataNascimento) ||
@@ -30,22 +34,19 @@ static async Task<IResult> CriarPessoa([FromBody] PessoaDto pessoa, HttpContext 
     var pessoaId = Guid.NewGuid();
     var stack = pessoa.Stack != null
         ? string.Join(";", pessoa.Stack)
-        : null;
+        : string.Empty;
 
-    const string insert = @"
+    await connection.OpenAsync();
+
+    await using var command = connection.CreateCommand();
+    command.CommandText = @"
         INSERT INTO pessoas(id, nome, apelido, nascimento, stack) 
-        VALUES(@id, @nome, @apelido, @dataNascimento, @stack);
-        ";
-
-    await using var connection = await ConnectionFactory.GetPostgresConnection();
-    await using var command = new NpgsqlCommand(insert, connection);
+        VALUES(@id, @nome, @apelido, @dataNascimento, @stack);";
     command.Parameters.AddWithValue("id", pessoaId);
     command.Parameters.AddWithValue("nome", pessoa.Nome);
     command.Parameters.AddWithValue("apelido", pessoa.Apelido);
     command.Parameters.AddWithValue("dataNascimento", dataNascimento);
-
-    if (stack is null) command.Parameters.AddWithValue("stack", DBNull.Value);
-    else command.Parameters.AddWithValue("stack", stack);
+    command.Parameters.AddWithValue("stack", stack);
 
     try
     {
@@ -57,98 +58,89 @@ static async Task<IResult> CriarPessoa([FromBody] PessoaDto pessoa, HttpContext 
         return Results.BadRequest();
     }
 
+    await connection.DisposeAsync();
+
     context.Response.Headers["Location"] = $"/pessoas/{pessoaId}";
     return Results.Created();
 }
 
-static async Task<IResult> BuscarPessoaPorId(Guid id)
+async Task<IResult?> BuscarPessoaPorId(Guid id, NpgsqlConnection connection)
 {
-    const string query = @"
+    await connection.OpenAsync();
+
+    await using var command = connection.CreateCommand();
+    command.CommandText = @"
         SELECT nome, apelido, nascimento, stack
         FROM pessoas
-        WHERE id = @id;
-        ";
-
-    await using var connection = await ConnectionFactory.GetPostgresConnection();
-    await using var command = new NpgsqlCommand(query, connection);
+        WHERE id = @id;";
     command.Parameters.AddWithValue("id", id);
 
     await using var reader = await command.ExecuteReaderAsync();
-    while (await reader.ReadAsync())
+    if (!await reader.ReadAsync()) return Results.NotFound();
+
+    var stack = reader.GetString(3);
+    var pessoa = new PessoaDto
     {
-        var nome = reader.GetString(0);
-        var apelido = reader.GetString(1);
-        var nascimento = reader.GetDateTime(2);
-        var stack = await reader.IsDBNullAsync(3) ? null : reader.GetString(3);
+        Id = id,
+        Nome = reader.GetString(0),
+        Apelido = reader.GetString(1),
+        Nascimento = reader.GetDateTime(2).ToString("yyyy-MM-dd"),
+        Stack = stack == string.Empty ? null : stack.Split(";")
+    };
 
-        var pessoa = new PessoaDto
-        {
-            Id = id,
-            Nome = nome,
-            Apelido = apelido,
-            Nascimento = nascimento.ToString("yyyy-MM-dd"),
-            Stack = stack?.Split(";")
-        };
-        return Results.Ok(pessoa);
-    }
-
-    return Results.NotFound();
+    await connection.DisposeAsync();
+    
+    return Results.Ok(pessoa);
 }
 
-static async Task<IResult> BuscarPessoasPorTermo([FromQuery] string? t)
+async Task<IResult> BuscarPessoasPorTermo([FromQuery] string? t, NpgsqlConnection connection)
 {
     if (string.IsNullOrWhiteSpace(t)) return Results.BadRequest();
-    
+
+    await connection.OpenAsync();
+
     var query = $"%{t}%";
-    const string search = @"
+    await using var command = connection.CreateCommand();
+    command.CommandText = @"
         SELECT id, nome, apelido, nascimento, stack
         FROM pessoas
-        WHERE nome like @termo or apelido like @termo or stack like @termo;
-    ";
-
-    await using var connection = await ConnectionFactory.GetPostgresConnection();
-    await using var command = new NpgsqlCommand(search, connection);
+        WHERE busca_trgm ILIKE @termo
+        LIMIT 50;";
     command.Parameters.AddWithValue("termo", query);
 
     await using var reader = await command.ExecuteReaderAsync();
 
-    var pessoas = new List<PessoaDto>();
+    var pessoasEncontradas = new List<PessoaDto>();
     while (await reader.ReadAsync())
     {
-        var id = reader.GetGuid(0);
-        var nome = reader.GetString(1);
-        var apelido = reader.GetString(2);
-        var nascimento = reader.GetDateTime(3);
-        var stack = await reader.IsDBNullAsync(4) ? null : reader.GetString(4);
-
-        pessoas.Add(new PessoaDto
+        var stack = reader.GetString(4);
+        pessoasEncontradas.Add(new PessoaDto
         {
-            Id = id,
-            Nome = nome,
-            Apelido = apelido,
-            Nascimento = nascimento.ToString("yyyy-MM-dd"),
-            Stack = stack?.Split(";")
+            Id = reader.GetGuid(0),
+            Nome = reader.GetString(1),
+            Apelido = reader.GetString(2),
+            Nascimento = reader.GetDateTime(3).ToString("yyyy-MM-dd"),
+            Stack = stack == string.Empty ? null : stack.Split(";")
         });
     }
 
-    return Results.Ok(pessoas);
+    await connection.DisposeAsync();
+
+    return Results.Ok(pessoasEncontradas);
 }
 
-static async Task<IResult> ContarPessoas()
+async Task<IResult> ContarPessoas(NpgsqlConnection connection)
 {
-    const string count = @"SELECT count(*) FROM pessoas;";
+    await connection.OpenAsync();
 
-    await using var connection = await ConnectionFactory.GetPostgresConnection();
-    await using var command = new NpgsqlCommand(count, connection);
+    await using var command = connection.CreateCommand();
+    command.CommandText = "SELECT count(*) FROM pessoas;";
 
-    await using var reader = await command.ExecuteReaderAsync();
-    while (await reader.ReadAsync())
-    {
-        var total = reader.GetInt32(0);
-        return Results.Ok(total);
-    }
+    var total = await command.ExecuteScalarAsync();
 
-    return Results.BadRequest();
+    await connection.DisposeAsync();
+
+    return Results.Ok(total);
 }
 
 static bool DataValida(string? nascimento, out DateTime dataNascimento) =>
